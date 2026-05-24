@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema de monitoramento em tempo real da fila de processamento HTF">
+    <title>Fila de Processamento HTF - Santa Casa Bragança</title>
+
+    <!-- Preconnect para otimização -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://stackpath.bootstrapcdn.com">
+
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" sizes="120x120"
+        href="https://santacasabraganca.com.br/_shared/images/favicon/apple-icon-120x120.png">
+
+    <style>
+        :root {
+            --primary-color: #00305d;
+            --secondary-color: #0056b3;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+            --light-bg: #f8f9fa;
+            --white: #ffffff;
+            --text-muted: #6c757d;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.15);
+            --border-radius: 8px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding-bottom: 20px;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            box-shadow: var(--shadow);
+            border: none;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-brand img {
+            max-width: 250px;
+            height: auto;
+            transition: transform 0.3s ease;
+            filter: brightness(0) invert(1);
+        }
+
+        .navbar-brand:hover img {
+            transform: scale(1.05);
+        }
+
+        /* Indicador de Refresh */
+        .refresh-indicator {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            box-shadow: var(--shadow);
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+            user-select: none;
+        }
+
+        .refresh-indicator:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .refresh-indicator:active {
+            transform: translateY(0);
+        }
+
+        .refresh-indicator i {
+            animation: rotate 2s linear infinite;
+        }
+
+        .refresh-indicator.updating {
+            background: var(--success-color);
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Container */
+        .container {
+            max-width: 95%;
+            margin-top: 20px;
+        }
+
+        /* Page Header */
+        .page-header {
+            background: var(--white);
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+            text-align: center;
+            border-left: 5px solid var(--primary-color);
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .page-header h2 {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+        }
+
+        .page-header .subtitle {
+            color: var(--text-muted);
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            margin: 0;
+        }
+
+        /* Alerts */
+        .alert {
+            font-size: 1.1rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            border: none;
+            margin-bottom: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: var(--white);
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #feca57 0%, #ff9ff3 100%);
+            color: #333;
+        }
+
+        /* Stats Cards */
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--white);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+            border-top: 4px solid var(--primary-color);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .stat-card:hover::before {
+            left: 100%;
+        }
+
+        .stat-card .icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover .icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover .number {
+            transform: scale(1.05);
+        }
+
+        .stat-card .label {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        /* Table Container */
+        .table-container {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: var(--white);
+            padding: 20px;
+            border-bottom: none;
+        }
+
+        .table-header h4 {
+            margin: 0;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Table */
+        .table {
+            margin-bottom: 0;
+            background: var(--white);
+        }
+
+        .table thead th {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: var(--white);
+            border: none;
+            font-weight: 600;
+            text-align: center;
+            padding: 15px;
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+
+        .table tbody tr {
+            transition: var(--transition);
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9ff;
+            transform: scale(1.002);
+        }
+
+        .table tbody tr.updating {
+            animation: pulse-row 0.5s ease;
+        }
+
+        @keyframes pulse-row {
+
+            0%,
+            100% {
+                background-color: transparent;
+            }
+
+            50% {
+                background-color: #e3f2fd;
+            }
+        }
+
+        .table td {
+            text-align: center;
+            padding: 15px 10px;
+            vertical-align: middle;
+            border-color: #e9ecef;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .status-processing {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: var(--white);
+            animation: pulse-badge 2s infinite;
+        }
+
+        .status-completed {
+            background: linear-gradient(135deg, #55efc4 0%, #00b894 100%);
+            color: var(--white);
+        }
+
+        .status-pending {
+            background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+            color: var(--white);
+        }
+
+        .status-error {
+            background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
+            color: var(--white);
+        }
+
+        @keyframes pulse-badge {
+            0% {
+                box-shadow: 0 0 0 0 rgba(116, 185, 255, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(116, 185, 255, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(116, 185, 255, 0);
+            }
+        }
+
+        /* Progress Bar */
+        .progress-bar-custom {
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success-color) 0%, #20c997 100%);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        /* No Data */
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .no-data i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            color: var(--text-muted);
+        }
+
+        .footer p {
+            margin: 5px 0;
+        }
+
+        .footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .footer a:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+
+        /* Loading Spinner */
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+            border-width: 0.15em;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                max-width: 98%;
+                padding: 0 10px;
+            }
+
+            .page-header {
+                padding: 20px;
+            }
+
+            .stats-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .refresh-indicator {
+                top: 70px;
+                right: 10px;
+                padding: 8px 15px;
+                font-size: 0.85rem;
+            }
+
+            .table-responsive {
+                font-size: 0.85rem;
+            }
+
+            .table td {
+                padding: 12px 8px;
+            }
+
+            .status-badge {
+                font-size: 0.75rem;
+                padding: 6px 12px;
+            }
+
+            .stat-card .icon {
+                font-size: 2rem;
+            }
+
+            .stat-card .number {
+                font-size: 1.75rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .navbar-brand img {
+                max-width: 180px;
+            }
+
+            .page-header h2 {
+                font-size: 1.25rem;
+            }
+
+            .page-header .subtitle {
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+
+            .navbar,
+            .refresh-indicator,
+            .footer {
+                display: none;
+            }
+
+            body {
+                background: white;
+            }
+
+            .table-container,
+            .page-header,
+            .stat-card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="refresh-indicator" onclick="manualUpdate()" role="button" aria-label="Atualizar dados" tabindex="0">
+        <i class="fas fa-sync-alt"></i>
+        <span>Atualizando...</span>
+    </div>
+
+    <nav class="navbar navbar-expand-lg navbar-dark" role="navigation">
+        <div class="container">
+            <a class="navbar-brand" href="#" aria-label="Santa Casa Bragança">
+                <img src="https://santacasabraganca.com.br/assets/images/logo.png" alt="Logo Santa Casa Bragança"
+                    loading="lazy">
+            </a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <header class="page-header">
+            <h2><i class="fas fa-tasks" aria-hidden="true"></i> Fila de Processamento HTF</h2>
+            <p class="subtitle">Monitoramento em tempo real do sistema de processamento</p>
+        </header>
+
+        <div id="alert-area" role="alert">
+            {% if mensagem_servico %}
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Atenção!</strong> {{ mensagem_servico }}
+            </div>
+            {% endif %}
+
+            {% if mensagem %}
+            <div class="alert alert-warning">
+                <i class="fas fa-info-circle"></i>
+                <strong>Aviso:</strong> {{ mensagem }}
+            </div>
+            {% endif %}
+        </div>
+
+        <section class="stats-cards" aria-label="Estatísticas do sistema">
+            <article class="stat-card">
+                <div class="icon" aria-hidden="true">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="number" id="total-paginas">{{ total_paginas or 0 }}</div>
+                <div class="label">Páginas Digitalizadas</div>
+            </article>
+            <article class="stat-card">
+                <div class="icon" aria-hidden="true">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+                <div class="number" id="total-trabalhos">{{ total_trabalhos or 0 }}</div>
+                <div class="label">Total de Trabalhos</div>
+            </article>
+            <article class="stat-card">
+                <div class="icon" aria-hidden="true">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="number" id="processando">
+                    {% set processando = 0 %}
+                    {% for item in dados %}
+                    {% if 'process' in item.State.lower() %}
+                    {% set processando = processando + 1 %}
+                    {% endif %}
+                    {% endfor %}
+                    {{ processando }}
+                </div>
+                <div class="label">Em Processamento</div>
+            </article>
+        </section>
+
+        <section class="table-container" aria-label="Fila de processamento">
+            <div class="table-header">
+                <h4><i class="fas fa-list"></i> Fila de Processamento</h4>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped" id="dados-tabela" role="table">
+                    <thead>
+                        <tr>
+                            <th scope="col"><i class="fas fa-file"></i> Nome</th>
+                            <th scope="col"><i class="fas fa-info-circle"></i> Status</th>
+                            <th scope="col"><i class="fas fa-percentage"></i> Progresso</th>
+                            <th scope="col"><i class="fas fa-copy"></i> Páginas</th>
+                            <th scope="col"><i class="fas fa-user"></i> Usuário</th>
+                            <th scope="col"><i class="fas fa-globe"></i> Site</th>
+                            <th scope="col"><i class="fas fa-clock"></i> Hora</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if dados %}
+                        {% for item in dados %}
+                        <tr>
+                            <td data-label="Nome"><strong>{{ item.Name or 'N/A' }}</strong></td>
+                            <td data-label="Status">
+                                {% set status_class = 'status-pending' %}
+                                {% set status_icon = 'fa-clock' %}
+                                {% if item.State %}
+                                {% set state_lower = item.State.lower() %}
+                                {% if 'process' in state_lower %}
+                                {% set status_class = 'status-processing' %}
+                                {% set status_icon = 'fa-cog fa-spin' %}
+                                {% elif 'conclu' in state_lower or 'complete' in state_lower or 'finaliz' in state_lower
+                                %}
+                                {% set status_class = 'status-completed' %}
+                                {% set status_icon = 'fa-check' %}
+                                {% elif 'erro' in state_lower or 'error' in state_lower or 'falha' in state_lower %}
+                                {% set status_class = 'status-error' %}
+                                {% set status_icon = 'fa-times' %}
+                                {% endif %}
+                                {% endif %}
+                                <span class="status-badge {{ status_class }}">
+                                    <i class="fas {{ status_icon }}"></i>
+                                    {{ item.State or 'Desconhecido' }}
+                                </span>
+                            </td>
+                            <td data-label="Progresso">
+                                <div class="progress-bar-custom">
+                                    <div class="progress-fill" style="width: {{ item.Percentage or 0 }}%"></div>
+                                </div>
+                                <small class="text-muted">{{ item.Percentage or 0 }}%</small>
+                            </td>
+                            <td data-label="Páginas"><span class="badge badge-info">{{ item.Pages or 0 }}</span></td>
+                            <td data-label="Usuário">{{ item.User or 'N/A' }}</td>
+                            <td data-label="Site">{{ item.Site or 'N/A' }}</td>
+                            <td data-label="Hora">{{ item.Time or 'N/A' }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-5">
+                                <i class="fas fa-inbox fa-3x mb-3" style="opacity: 0.3;"></i>
+                                <br>
+                                Nenhum trabalho na fila de processamento
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        {% if not dados %}
+        <div class="no-data">
+            <i class="fas fa-inbox"></i>
+            <h4>Nenhum trabalho na fila</h4>
+            <p>{{ mensagem or 'Não há trabalhos de processamento no momento.' }}</p>
+        </div>
+        {% endif %}
+    </main>
+
+    <footer class="footer" role="contentinfo">
+        <p><i class="fas fa-hospital"></i> Sistema de Processamento HTF - Santa Casa Bragança</p>
+        <p><small>Atualização automática a cada 3 segundos</small></p>
+        <p>
+            &copy; <span id="ano-atual"></span>
+            <a href="https://www.linkedin.com/in/felipe-badoco/" target="_blank" rel="noopener noreferrer">Felipe
+                Badoco</a> - Todos os direitos reservados.
+        </p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Configurações globais
+        const CONFIG = {
+            UPDATE_INTERVAL: 3000, // 3 segundos
+            ANIMATION_DURATION: 500,
+            API_ENDPOINT: '/api/data'
+        };
+
+        // Estado global
+        let updateInterval = null;
+        let isUpdating = false;
+
+        // Utilitários
+        const utils = {
+            formatNumber: (num) => (num || 0).toLocaleString('pt-BR'),
+
+            getStatusClass: (status) => {
+                if (!status) return 'status-pending';
+                const state = status.toLowerCase();
+                if (state.includes('process')) return 'status-processing';
+                if (state.includes('conclu') || state.includes('complete') || state.includes('finaliz')) return 'status-completed';
+                if (state.includes('erro') || state.includes('error') || state.includes('falha')) return 'status-error';
+                return 'status-pending';
+            },
+
+            getStatusIcon: (statusClass) => {
+                const icons = {
+                    'status-processing': 'fa-cog fa-spin',
+                    'status-completed': 'fa-check',
+                    'status-error': 'fa-times',
+                    'status-pending': 'fa-clock'
+                };
+                return icons[statusClass] || 'fa-clock';
+            },
+
+            debounce: (func, wait) => {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+        };
+
+        // Atualização de UI
+        const ui = {
+            updateStats: (data) => {
+                const stats = {
+                    'total-paginas': utils.formatNumber(data.total_paginas),
+                    'total-trabalhos': data.total_trabalhos || 0,
+                    'processando': data.processando || 0
+                };
+
+                Object.entries(stats).forEach(([id, value]) => {
+                    const element = document.getElementById(id);
+                    if (element && element.textContent != value) {
+                        element.style.transform = 'scale(1.1)';
+                        element.textContent = value;
+                        setTimeout(() => element.style.transform = 'scale(1)', 200);
+                    }
+                });
+            },
+
+            updateAlerts: (mensagemServico, mensagem) => {
+                const alertArea = document.getElementById('alert-area');
+                if (!alertArea) return;
+
+                // Limpa alertas existentes
+                alertArea.innerHTML = '';
+
+                // Adiciona alerta de serviço
+                if (mensagemServico) {
+                    alertArea.insertAdjacentHTML('beforeend', `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Atenção!</strong> ${mensagemServico}
+                        </div>
+                    `);
+                }
+
+                // Adiciona alerta de mensagem
+                if (mensagem) {
+                    alertArea.insertAdjacentHTML('beforeend', `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Aviso:</strong> ${mensagem}
+                        </div>
+                    `);
+                }
+            },
+
+            updateTable: (dados) => {
+                const tbody = document.querySelector('#dados-tabela tbody');
+                if (!tbody) return;
+
+                if (!dados || dados.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-5">
+                                <i class="fas fa-inbox fa-3x mb-3" style="opacity: 0.3;"></i>
+                                <br>
+                                Nenhum trabalho na fila de processamento
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                const rows = dados.map(item => {
+                    const statusClass = utils.getStatusClass(item.State);
+                    const statusIcon = utils.getStatusIcon(statusClass);
+
+                    return `
+                        <tr>
+                            <td data-label="Nome"><strong>${item.Name || 'N/A'}</strong></td>
+                            <td data-label="Status">
+                                <span class="status-badge ${statusClass}">
+                                    <i class="fas ${statusIcon}"></i>
+                                    ${item.State || 'Desconhecido'}
+                                </span>
+                            </td>
+                            <td data-label="Progresso">
+                                <div class="progress-bar-custom">
+                                    <div class="progress-fill" style="width: ${item.Percentage || 0}%"></div>
+                                </div>
+                                <small class="text-muted">${item.Percentage || 0}%</small>
+                            </td>
+                            <td data-label="Páginas"><span class="badge badge-info">${item.Pages || 0}</span></td>
+                            <td data-label="Usuário">${item.User || 'N/A'}</td>
+                            <td data-label="Site">${item.Site || 'N/A'}</td>
+                            <td data-label="Hora">${item.Time || 'N/A'}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                tbody.innerHTML = rows;
+            },
+
+            updateNoDataSection: (dados, mensagem) => {
+                const container = document.querySelector('main.container');
+                let noDataSection = document.querySelector('.no-data');
+
+                if (!dados || dados.length === 0) {
+                    if (!noDataSection) {
+                        const noDataHTML = `
+                            <div class="no-data">
+                                <i class="fas fa-inbox"></i>
+                                <h4>Nenhum trabalho na fila</h4>
+                                <p>${mensagem || 'Não há trabalhos de processamento no momento.'}</p>
+                            </div>
+                        `;
+                        container.insertAdjacentHTML('beforeend', noDataHTML);
+                    }
+                } else if (noDataSection) {
+                    noDataSection.remove();
+                }
+            },
+
+            setRefreshIndicator: (state) => {
+                const indicator = document.querySelector('.refresh-indicator');
+                if (!indicator) return;
+
+                if (state === 'updating') {
+                    indicator.classList.add('updating');
+                } else if (state === 'idle') {
+                    indicator.classList.remove('updating');
+                }
+            }
+        };
+
+        // Função principal de atualização
+        async function updateData() {
+            if (isUpdating) return;
+
+            isUpdating = true;
+            ui.setRefreshIndicator('updating');
+
+            try {
+                const response = await fetch(CONFIG.API_ENDPOINT, {
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const data = await response.json();
+
+                // Atualiza todos os componentes
+                ui.updateStats(data);
+                ui.updateAlerts(data.mensagem_servico, data.mensagem);
+                ui.updateTable(data.dados);
+                ui.updateNoDataSection(data.dados, data.mensagem);
+
+                console.log('✅ Dados atualizados:', new Date().toLocaleTimeString());
+            } catch (error) {
+                console.error('❌ Erro ao atualizar:', error);
+
+                // Em caso de erro persistente, recarrega a página após 30s
+                if (error.message.includes('Failed to fetch')) {
+                    setTimeout(() => location.reload(), 30000);
+                }
+            } finally {
+                isUpdating = false;
+                ui.setRefreshIndicator('idle');
+            }
+        }
+
+        // Atualização manual
+        function manualUpdate() {
+            updateData();
+            const indicator = document.querySelector('.refresh-indicator');
+            if (indicator) {
+                indicator.style.background = 'var(--success-color)';
+                setTimeout(() => {
+                    indicator.style.background = 'var(--primary-color)';
+                }, 1000);
+            }
+        }
+
+        // Gerenciamento de ciclo de vida
+        function startUpdating() {
+            // Primeira atualização após 1s
+            setTimeout(updateData, 1000);
+
+            // Depois atualiza a cada 3 segundos
+            updateInterval = setInterval(updateData, CONFIG.UPDATE_INTERVAL);
+            console.log('▶️ Atualizações iniciadas');
+        }
+
+        function stopUpdating() {
+            if (updateInterval) {
+                clearInterval(updateInterval);
+                updateInterval = null;
+                console.log('⏸️ Atualizações pausadas');
+            }
+        }
+
+        // Pausa quando a aba está inativa (economia de recursos)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopUpdating();
+            } else {
+                startUpdating();
+            }
+        });
+
+        // Keyboard accessibility para refresh indicator
+        document.querySelector('.refresh-indicator')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                manualUpdate();
+            }
+        });
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            // Define ano atual
+            document.getElementById('ano-atual').textContent = new Date().getFullYear();
+
+            // Inicia atualizações
+            startUpdating();
+
+            console.log('🚀 Sistema de monitoramento HTF iniciado');
+        });
+
+        // Performance: Intersection Observer para animações
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.stat-card, .table-container').forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                el.style.transition = 'all 0.5s ease';
+                observer.observe(el);
+            });
+        }
