@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Console de Logs - HTF Monitoring</title>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #151f32;
+            --primary: #f8fafc;
+            --accent: #3b82f6;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: #1e293b;
+            --success: #10b981;
+            --error: #ef4444;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.2);
+            --input-bg: #1e293b;
+            --input-border: #334155;
+            --input-text: #f8fafc;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header-bar {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: var(--shadow);
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0;
+        }
+
+        .header-title h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--primary);
+            letter-spacing: -0.025em;
+        }
+
+        .header-title i {
+            color: var(--accent);
+            font-size: 1.25rem;
+        }
+
+        .controls-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .sync-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+        }
+
+        .terminal-container {
+            flex-grow: 1;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .terminal-window {
+            flex-grow: 1;
+            background: #020617;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            background: #0f172a;
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .terminal-dots {
+            display: flex;
+            gap: 0.375rem;
+        }
+
+        .terminal-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .dot-red { background: #ef4444; }
+        .dot-yellow { background: #f59e0b; }
+        .dot-green { background: #10b981; }
+
+        .terminal-filename {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .terminal-body {
+            flex-grow: 1;
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            color: #f8fafc;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            padding: 1.25rem;
+            scroll-behavior: smooth;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #020617;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+
+        select option {
+            background: var(--card-bg);
+            color: var(--text-main);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header-bar">
+        <div class="header-title">
+            <i class="fas fa-terminal"></i>
+            <h1>Console de Logs - Portal IRM</h1>
+        </div>
+        
+        <div class="controls-wrapper">
+            <!-- Dropdown do Arquivo de Log -->
+            <div class="d-flex align-items-center" style="gap: 8px;">
+                <span class="text-muted small font-weight-bold">ARQUIVO:</span>
+                <select id="log-file-select" class="form-control form-control-sm" onchange="fetchLogs(true)" style="width: 250px; border-radius: 8px; background: var(--input-bg); border-color: var(--input-border); color: var(--input-text); font-family: monospace;">
+                    <!-- Carregado dinamicamente -->
+                </select>
+            </div>
+
+            <!-- Seletor de Intervalo de Refresh -->
+            <div class="d-flex align-items-center" style="gap: 8px;">
+                <span class="text-muted small font-weight-bold">REFRESH:</span>
+                <select id="refresh-rate" class="form-control form-control-sm" onchange="updateRefreshInterval()" style="width: 90px; border-radius: 8px; background: var(--input-bg); border-color: var(--input-border); color: var(--input-text);">
+                    <option value="1" selected>1s</option>
+                    <option value="3">3s</option>
+                    <option value="5">5s</option>
+                    <option value="10">10s</option>
+                    <option value="0">Pausado</option>
+                </select>
+            </div>
+
+            <!-- Checkbox de Inverter Ordem (Recentes no Topo) -->
+            <div class="custom-control custom-checkbox mr-2">
+                <input type="checkbox" class="custom-control-input" id="log-reverse" checked onchange="fetchLogs(true)">
+                <label class="custom-control-label font-weight-normal text-muted" for="log-reverse" style="font-size: 0.85rem; user-select: none;">
+                    Recentes no topo
+                </label>
+            </div>
+
+            <!-- Indicador de Status -->
+            <div class="sync-indicator">
+                <div class="dot"></div>
+                <span id="update-status">Sincronizado</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="terminal-container">
+        <div class="terminal-window">
+            <div class="terminal-header">
+                <div class="terminal-dots">
+                    <div class="terminal-dot dot-red"></div>
+                    <div class="terminal-dot dot-yellow"></div>
+                    <div class="terminal-dot dot-green"></div>
+                </div>
+                <div class="terminal-filename" id="active-filename">carregando...</div>
+                <div style="width: 42px;"></div> <!-- Spacer para centralizar -->
+            </div>
+            <div class="terminal-body" id="log-terminal">
+                Inicializando conexão com o servidor de logs...
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const CLIENT_VERSION = "2.0";
+        let fetchIntervalId = null;
+
+        function formatLogLine(line) {
+            let escaped = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            if (escaped.match(/error|err|falha|falhou|fail/i)) {
+                return `<span style="color: #f87171;">${escaped}</span>`;
+            }
+            if (escaped.match(/warning|warn|aviso/i)) {
+                return `<span style="color: #fbbf24;">${escaped}</span>`;
+            }
+            if (escaped.match(/info/i)) {
+                return `<span style="color: #34d399;">${escaped}</span>`;
+            }
+            return escaped;
+        }
+
+        async function fetchLogs(force = false) {
+            const statusText = document.getElementById('update-status');
+            const dot = document.querySelector('.dot');
+            const select = document.getElementById('log-file-select');
+            const terminal = document.getElementById('log-terminal');
+            const activeFileLabel = document.getElementById('active-filename');
+            const selectedFile = select.value || '';
+            
+            let url = '/api/logs?limit=250'; // Na tela cheia, aumentamos o limite para 250 linhas
+            if (selectedFile) {
+                url += `&file=${encodeURIComponent(selectedFile)}`;
+            }
+
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+
+                // Verifica se há uma versão mais nova para recarregar a página
+                if (data.versao && data.versao !== CLIENT_VERSION) {
+                    window.location.reload(true);
+                    return;
+                }
+
+                if (data.erro) {
+                    terminal.innerHTML = `<span style="color: #ef4444;">${data.erro}</span>`;
+                    activeFileLabel.textContent = "erro.log";
+                    dot.style.background = 'var(--error)';
+                    return;
+                }
+
+                activeFileLabel.textContent = data.arquivo_atual;
+
+                // Preenche o dropdown apenas se houver mudanças nos arquivos
+                const options = data.arquivos.map(f => {
+                    const selected = f === data.arquivo_atual ? 'selected' : '';
+                    return `<option value="${f}" ${selected}>${f}</option>`;
+                }).join('');
+
+                if (select.innerHTML.trim() !== options.trim()) {
+                    select.innerHTML = options;
+                }
+
+                // Renderiza logs
+                if (data.linhas.length === 0) {
+                    terminal.innerHTML = '<span style="color: #64748b;">[Nenhuma linha registrada neste log]</span>';
+                } else {
+                    const isReverse = document.getElementById('log-reverse').checked;
+                    const linesToRender = isReverse ? [...data.linhas].reverse() : data.linhas;
+                    terminal.innerHTML = linesToRender.map(formatLogLine).join('\n');
+
+                    // Controla scroll com base na ordem de exibição
+                    if (!isReverse) {
+                        terminal.scrollTop = terminal.scrollHeight;
+                    } else {
+                        terminal.scrollTop = 0;
+                    }
+                }
+
+                statusText.textContent = 'Sincronizado: ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                dot.style.background = 'var(--success)';
+            } catch (e) {
+                statusText.textContent = 'Erro de conexão';
+                dot.style.background = 'var(--error)';
+                terminal.innerHTML += `\n<span style="color: #ef4444;">[Erro de conexão com a API: ${e.message}]</span>`;
+            }
+        }
+
+        function updateRefreshInterval() {
+            const select = document.getElementById('refresh-rate');
+            const rateSec = parseInt(select.value);
+            
+            if (fetchIntervalId) {
+                clearInterval(fetchIntervalId);
+                fetchIntervalId = null;
+            }
+
+            if (rateSec > 0) {
+                fetchIntervalId = setInterval(() => fetchLogs(false), rateSec * 1000);
+            }
+        }
+
+        // Inicialização
+        fetchLogs(true);
+        updateRefreshInterval(); // Inicia com base no select padrão (3s)
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                fetchLogs(true);
+            }
+        });
+    </script>
+</body>
+</html>
