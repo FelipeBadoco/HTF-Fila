@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acesso Administrativo - Portal IRM</title>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #151f32;
+            --primary: #f8fafc;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: #1e293b;
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+            --input-bg: #0f172a;
+            --input-border: #334155;
+            --error: #ef4444;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 1.5rem;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 420px;
+            padding: 2.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+        }
+
+        .logo-wrapper {
+            margin-bottom: 1.75rem;
+        }
+
+        .logo-wrapper img {
+            max-height: 48px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
+        .card-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .card-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        .input-group-custom {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group-custom i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .form-control-custom {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            padding: 0.85rem 1rem 0.85rem 2.75rem;
+            color: #ffffff;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        .form-control-custom:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--accent);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            padding: 0.85rem;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-submit:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            display: none;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #f87171;
+            padding: 0.75rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            margin-bottom: 1.25rem;
+            text-align: left;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 1.5rem;
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+
+        .back-link:hover {
+            color: var(--primary);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="logo-wrapper">
+            <img src="https://santacasabraganca.com.br/assets/images/logo.png" alt="Santa Casa">
+        </div>
+
+        <h2 class="card-title"><i class="fas fa-shield-alt text-primary mr-1"></i> Área Administrativa</h2>
+        <p class="card-subtitle">Informe a senha para acessar as ferramentas do servidor.</p>
+
+        <div id="error-box" class="error-message">
+            <i class="fas fa-exclamation-circle mr-1"></i> <span id="error-text">Senha incorreta.</span>
+        </div>
+
+        <form id="login-form" onsubmit="realizarLogin(event)">
+            <div class="input-group-custom">
+                <i class="fas fa-lock"></i>
+                <input type="password" id="senha" class="form-control-custom" placeholder="Digite a senha administrativa..." required autofocus>
+            </div>
+
+            <button type="submit" id="btn-entrar" class="btn-submit">
+                <span>Acessar Painel</span>
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </form>
+
+        <a href="/" class="back-link">
+            <i class="fas fa-chevron-left"></i> Voltar para a Fila de Trabalhos
+        </a>
+    </div>
+
+    <script>
+        async function realizarLogin(e) {
+            e.preventDefault();
+            const senha = document.getElementById('senha').value;
+            const btn = document.getElementById('btn-entrar');
+            const errBox = document.getElementById('error-box');
+            const errText = document.getElementById('error-text');
+
+            errBox.style.display = 'none';
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+
+            try {
+                const res = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ senha })
+                });
+
+                const data = await res.json();
+                if (res.ok && data.sucesso) {
+                    window.location.href = '/admin';
+                } else {
+                    errText.textContent = data.erro || 'Senha incorreta.';
+                    errBox.style.display = 'block';
+                    document.getElementById('senha').select();
+                }
+            } catch (err) {
+                errText.textContent = 'Erro ao conectar ao servidor. Tente novamente.';
+                errBox.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Acessar Painel</span> <i class="fas fa-arrow-right"></i>';
+            }
+        }
+    </script>
+</body>
+</html>
+

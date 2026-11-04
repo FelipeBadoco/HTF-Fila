@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo & SSH - Portal IRM</title>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #151f32;
+            --primary: #f8fafc;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: #1e293b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.2);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header-bar {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: var(--shadow);
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0;
+        }
+
+        .header-title h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--primary);
+            letter-spacing: -0.025em;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .btn-nav {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.45rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s;
+        }
+
+        .btn-nav:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            text-decoration: none;
+        }
+
+        .btn-logout {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .btn-logout:hover {
+            background: rgba(239, 68, 68, 0.25);
+            color: #ffffff;
+        }
+
+        .main-container {
+            flex-grow: 1;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        /* Info Card */
+        .info-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: var(--shadow);
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.9rem;
+        }
+
+        .info-label {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .info-val {
+            font-family: 'Consolas', monospace;
+            color: var(--primary);
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        /* Action Controls */
+        .controls-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            box-shadow: var(--shadow);
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .btn-action {
+            border: none;
+            padding: 0.7rem 1.25rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-check {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-check:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .btn-clean {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-clean:hover {
+            background: #b91c1c;
+            transform: translateY(-1px);
+        }
+
+        .btn-action:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Terminal Window */
+        .terminal-window {
+            flex-grow: 1;
+            background: #020617;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 400px;
+        }
+
+        .terminal-header {
+            background: #090e1a;
+            padding: 0.6rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .terminal-dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .terminal-dots span {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .dot-red { background: #ef4444; }
+        .dot-yellow { background: #f59e0b; }
+        .dot-green { background: #10b981; }
+
+        .terminal-title {
+            font-family: 'Consolas', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .terminal-tools {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-tool {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: color 0.15s;
+        }
+
+        .btn-tool:hover {
+            color: var(--primary);
+        }
+
+        .terminal-body {
+            flex-grow: 1;
+            padding: 1rem 1.25rem;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #e2e8f0;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .log-time { color: #64748b; }
+        .log-info { color: #38bdf8; }
+        .log-success { color: #4ade80; font-weight: 600; }
+        .log-warn { color: #facc15; }
+        .log-error { color: #f87171; font-weight: 600; }
+        .log-cmd { color: #c084fc; font-weight: 600; }
+
+        /* Modal de Confirmação */
+        .custom-modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(6px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .custom-modal {
+            background: var(--card-bg);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 20px;
+            max-width: 540px;
+            width: 100%;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.92); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-icon-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-icon-badge {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        .modal-title-text h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .modal-title-text p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .modal-path-box {
+            background: #020617;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-family: 'Consolas', monospace;
+            font-size: 0.8rem;
+            color: #f87171;
+            margin: 1.25rem 0;
+            word-break: break-all;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            border: none;
+            padding: 0.65rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .btn-cancel:hover { background: rgba(255, 255, 255, 0.15); }
+
+        .btn-confirm-delete {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 0.65rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn-confirm-delete:hover { background: #b91c1c; }
+    </style>
+</head>
+<body>
+
+    <header class="header-bar">
+        <div class="header-title">
+            <i class="fas fa-terminal text-primary"></i>
+            <h1>Terminal Administrativo - IRM</h1>
+        </div>
+        <div class="nav-actions">
+            <a href="/" class="btn-nav"><i class="fas fa-list-ul"></i> Fila de Trabalhos</a>
+            <a href="/logs" class="btn-nav"><i class="fas fa-file-alt"></i> Logs</a>
+            <button onclick="realizarLogout()" class="btn-nav btn-logout"><i class="fas fa-sign-out-alt"></i> Sair</button>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- Detalhes do Ambiente -->
+        <div class="info-card">
+            <div class="info-item">
+                <span class="info-label"><i class="fas fa-server mr-1"></i> Host SSH:</span>
+                <span class="info-val">{{ ssh_user }}@{{ ssh_host }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label"><i class="fas fa-folder-open mr-1"></i> Pasta Alvo:</span>
+                <span class="info-val" title="{{ contentstore_path }}">{{ contentstore_path }}</span>
+            </div>
+        </div>
+
+        <!-- Barra de Ações -->
+        <div class="controls-card">
+            <div>
+                <strong style="font-size: 0.95rem; color: var(--primary);">Ações de Manutenção</strong>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+                    Execute a verificação prévia antes de efetuar a limpeza do diretório.
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="btn-verificar" class="btn-action btn-check" onclick="verificarContentstore()">
+                    <i class="fas fa-search"></i>
+                    <span>1. Verificar Diretório</span>
+                </button>
+
+                <button id="btn-abrir-limpeza" class="btn-action btn-clean" onclick="abrirModalConfirmacao()">
+                    <i class="fas fa-trash-alt"></i>
+                    <span>2. Limpar contentstore.deleted</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Terminal Interativo -->
+        <div class="terminal-window">
+            <div class="terminal-header">
+                <div class="terminal-dots">
+                    <span class="dot-red"></span>
+                    <span class="dot-yellow"></span>
+                    <span class="dot-green"></span>
+                </div>
+                <div class="terminal-title">console: bash session</div>
+                <div class="terminal-tools">
+                    <button class="btn-tool" onclick="copiarTerminal()" title="Copiar saída do terminal"><i class="far fa-copy"></i> Copiar</button>
+                    <button class="btn-tool" onclick="limparTerminal()" title="Limpar terminal"><i class="fas fa-eraser"></i> Limpar</button>
+                </div>
+            </div>
+            <div class="terminal-body" id="terminal-body">
+<span class="log-info">[SISTEMA]</span> Sessão administrativa iniciada.
+<span class="log-info">[SISTEMA]</span> Servidor remoto: <span class="log-cmd">{{ ssh_user }}@{{ ssh_host }}</span>
+<span class="log-info">[SISTEMA]</span> Diretório configurado: <span class="log-cmd">{{ contentstore_path }}</span>
+<span class="log-warn">[DICA]</span> Clique em "1. Verificar Diretório" para inspecionar o espaço e os arquivos antes de limpar.
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Confirmação -->
+    <div id="modal-confirmacao" class="custom-modal-backdrop">
+        <div class="custom-modal">
+            <div class="modal-icon-header">
+                <div class="modal-icon-badge">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="modal-title-text">
+                    <h3>Confirmar Exclusão Definitiva</h3>
+                    <p>Esta ação removerá todos os arquivos internos da pasta.</p>
+                </div>
+            </div>
+
+            <div style="font-size: 0.9rem; color: var(--text-main);">
+                Você tem certeza que deseja esvaziar permanentemente o diretório abaixo no servidor Linux?
+            </div>
+
+            <div class="modal-path-box">
+                {{ contentstore_path }}
+            </div>
+
+            <div style="font-size: 0.825rem; color: var(--text-muted);">
+                <i class="fas fa-info-circle mr-1"></i> A pasta raiz será preservada para manter permissões e links de volume do Docker. Apenas o conteúdo interno será apagado.
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="fecharModalConfirmacao()">Cancelar</button>
+                <button type="button" id="btn-executar-limpeza" class="btn-confirm-delete" onclick="executarLimpeza()">
+                    <i class="fas fa-trash-alt"></i> Sim, Apagar Arquivos
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const terminal = document.getElementById('terminal-body');
+
+        function appendLog(tipo, texto) {
+            const time = new Date().toLocaleTimeString('pt-BR');
+            let badgeClass = 'log-info';
+            let tag = 'INFO';
+
+            if (tipo === 'success') { badgeClass = 'log-success'; tag = 'SUCESSO'; }
+            else if (tipo === 'warn') { badgeClass = 'log-warn'; tag = 'AVISO'; }
+            else if (tipo === 'error') { badgeClass = 'log-error'; tag = 'ERRO'; }
+            else if (tipo === 'cmd') { badgeClass = 'log-cmd'; tag = 'SSH'; }
+
+            const logLine = `\n<span class="log-time">[${time}]</span> <span class="${badgeClass}">[${tag}]</span> ${texto}`;
+            terminal.innerHTML += logLine;
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function limparTerminal() {
+            terminal.innerHTML = '<span class="log-info">[SISTEMA]</span> Terminal limpo.';
+        }
+
+        function copiarTerminal() {
+            const texto = terminal.innerText;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(texto).then(() => {
+                    alert('Saída do terminal copiada para a área de transferência!');
+                });
+            }
+        }
+
+        async function verificarContentstore() {
+            const btn = document.getElementById('btn-verificar');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando...';
+
+            appendLog('cmd', 'Conectando ao servidor SSH para verificar diretório...');
+
+            try {
+                const res = await fetch('/api/admin/check-contentstore', { method: 'POST' });
+                const data = await res.json();
+
+                if (res.ok && data.sucesso) {
+                    appendLog('success', 'Verificação concluída com sucesso!');
+                    terminal.innerHTML += `\n<span style="color:#a5b4fc;">${data.saida}</span>`;
+                    terminal.scrollTop = terminal.scrollHeight;
+                } else {
+                    appendLog('error', data.saida || data.erro || 'Falha ao verificar.');
+                }
+            } catch (err) {
+                appendLog('error', 'Erro de conexão HTTP: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-search"></i> <span>1. Verificar Diretório</span>';
+            }
+        }
+
+        function abrirModalConfirmacao() {
+            document.getElementById('modal-confirmacao').style.display = 'flex';
+        }
+
+        function fecharModalConfirmacao() {
+            document.getElementById('modal-confirmacao').style.display = 'none';
+        }
+
+        async function executarLimpeza() {
+            const btn = document.getElementById('btn-executar-limpeza');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Apagando...';
+
+            fecharModalConfirmacao();
+            appendLog('warn', 'Iniciando operação de exclusão em contentstore.deleted...');
+
+            try {
+                const res = await fetch('/api/admin/clean-contentstore', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ confirmar: true })
+                });
+                const data = await res.json();
+
+                if (res.ok && data.sucesso) {
+                    appendLog('success', 'Operação de limpeza finalizada!');
+                    terminal.innerHTML += `\n<span style="color:#86efac;">${data.saida}</span>`;
+                    terminal.scrollTop = terminal.scrollHeight;
+                } else {
+                    appendLog('error', data.saida || data.erro || 'Falha ao executar limpeza.');
+                }
+            } catch (err) {
+                appendLog('error', 'Erro de conexão HTTP: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-trash-alt"></i> Sim, Apagar Arquivos';
+            }
+        }
+
+        async function realizarLogout() {
+            try {
+                await fetch('/api/admin/logout', { method: 'POST' });
+                window.location.href = '/admin';
+            } catch (e) {
+                window.location.href = '/admin';
+            }
+        }
+    </script>
+</body>
+</html>
+
